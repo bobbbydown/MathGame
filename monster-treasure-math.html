@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Monster Treasure Math</title>
+  <style>
+    :root {
+      --bg1: #24124d;
+      --bg2: #4a2b90;
+      --panel: rgba(255,255,255,.14);
+      --panel-solid: #fff7ff;
+      --ink: #231942;
+      --gold: #ffd166;
+      --pink: #ff7ac6;
+      --sky: #7bdff2;
+      --mint: #9ef0c0;
+      --violet: #b28dff;
+      --danger: #ff6b6b;
+      --ok: #5ad66f;
+      --shadow: 0 14px 32px rgba(0,0,0,.25);
+      --radius: 24px;
+      --tap: 68px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; margin: 0; font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif; background: radial-gradient(circle at top, #6f52d9, var(--bg1) 60%); color: white; }
+    body { overflow: hidden; }
+    button, input { font: inherit; }
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 12px;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(255,255,255,.18), transparent 18%),
+        radial-gradient(circle at 80% 0%, rgba(255,215,0,.12), transparent 20%),
+        linear-gradient(180deg, rgba(255,255,255,.08), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(123,223,242,.18), transparent 22%);
+    }
+    .topbar {
+      display: flex; gap: 10px; align-items: center; justify-content: space-between;
+      background: var(--panel); border: 2px solid rgba(255,255,255,.15); border-radius: 20px; padding: 10px 14px; box-shadow: var(--shadow);
+      backdrop-filter: blur(6px);
+    }
+    .left, .right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .badge-pill, .heart-pill, .star-pill, .chip {
+      display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.2);
+      font-weight: 700;
+    }
+    .screen {
+      flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.1));
+      border: 2px solid rgba(255,255,255,.18); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px;
+      backdrop-filter: blur(8px);
+    }
+    .light-card {
+      background: var(--panel-solid); color: var(--ink); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px;
+    }
+    .center { display: flex; align-items: center; justify-content: center; }
+    .title-wrap { text-align: center; padding-top: 8px; }
+    .title {
+      font-size: clamp(34px, 7vw, 62px); line-height: .95; margin: 4px 0 10px; letter-spacing: .5px;
+      text-shadow: 0 6px 18px rgba(0,0,0,.3);
+    }
+    .subtitle { font-size: clamp(16px, 3vw, 20px); opacity: .95; max-width: 780px; margin: 0 auto; }
+    .hero-monsters { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin-top: 10px; }
+    .monster-token {
+      width: 108px; height: 108px; border-radius: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.78)); color: var(--ink); box-shadow: var(--shadow); border: 4px solid rgba(255,255,255,.7);
+      animation: bob 2.3s ease-in-out infinite;
+    }
+    .monster-token .emoji { font-size: 44px; }
+    .monster-token .name { font-size: 15px; font-weight: 800; margin-top: 4px; }
+    .btn-grid, .mode-grid, .choice-grid, .map-grid, .stats-grid, .reward-grid { display: grid; gap: 12px; }
+    .btn-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mode-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .choice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .map-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    /* Path map styles */
+    .path-map-wrap {
+      position: relative; width: 100%; overflow-y: auto; overflow-x: hidden;
+    }
+    .path-map {
+      position: relative; display: flex; flex-direction: column; gap: 0; padding: 8px 4px 16px;
+    }
+    .path-row {
+      display: flex; justify-content: space-around; align-items: center; position: relative; min-height: 90px;
+    }
+    .path-row::before {
+      content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: 80%; height: 6px; background: rgba(255,255,255,.15); border-radius: 999px; z-index: 0;
+    }
+    .path-row.row-reverse::before { left: 50%; }
+    .path-node-wrap { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .path-connector-v {
+      width: 6px; height: 28px; background: rgba(255,255,255,.15); border-radius: 999px; margin: 0 auto;
+    }
+    .path-connector-v.unlocked { background: linear-gradient(180deg, rgba(255,209,102,.6), rgba(255,209,102,.2)); }
+    .map-node {
+      width: 72px; height: 72px; padding: 0; border-radius: 50%; border: 3px solid rgba(255,255,255,.2);
+      background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.1)); color: white; font-weight: 900;
+      position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    }
+    .map-node.boss-node { width: 82px; height: 82px; border-radius: 22px; border-color: rgba(255,107,107,.5); }
+    .map-node.superboss-node { width: 90px; height: 90px; border-radius: 22px; border-color: rgba(255,209,102,.7); background: linear-gradient(180deg, rgba(255,209,102,.3), rgba(255,180,0,.15)); }
+    .map-node.locked { opacity: .38; filter: grayscale(.5); }
+    .map-node.current { outline: 4px solid var(--gold); outline-offset: 3px; animation: pulse 1.5s infinite; }
+    .map-node.done { background: linear-gradient(180deg, rgba(90,214,111,.4), rgba(90,214,111,.15)); border-color: rgba(90,214,111,.5); }
+    .map-node .tiny { font-size: 10px; opacity: .85; font-weight: 700; }
+    .map-node .stage-type { font-size: 22px; line-height: 1; }
+    .map-node .stage-label { font-size: 9px; opacity: .8; font-weight: 700; }
+    .stage-btn { background: transparent; color: inherit; width: 100%; height: 100%; border: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 0; border-radius: inherit; }
+    .world-banner {
+      text-align: center; padding: 8px 16px; margin: 4px 0;
+      background: rgba(255,255,255,.1); border-radius: 12px; border: 1px solid rgba(255,255,255,.15);
+      font-size: 13px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; opacity: .9;
+    }
+    .reward-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .btn, .mode-card, .choice-btn, .stage-btn, .small-btn {
+      min-height: var(--tap); border: 0; border-radius: 20px; cursor: pointer; font-weight: 900; box-shadow: var(--shadow); transition: transform .12s ease, filter .12s ease, opacity .12s ease;
+    }
+    .btn:active, .mode-card:active, .choice-btn:active, .stage-btn:active, .small-btn:active { transform: scale(.985); }
+    .btn:hover, .mode-card:hover, .choice-btn:hover, .stage-btn:hover, .small-btn:hover { filter: brightness(1.03); }
+    .btn {
+      background: linear-gradient(180deg, var(--gold), #ffb703); color: #4d2b00; padding: 14px 16px; font-size: 22px;
+    }
+    .btn.secondary { background: linear-gradient(180deg, #ffffff, #efe7ff); color: var(--ink); }
+    .btn.ghost { background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.14)); color: white; border: 2px solid rgba(255,255,255,.2); }
+    .small-btn { min-height: 48px; padding: 10px 14px; background: linear-gradient(180deg, #fff, #efe7ff); color: var(--ink); }
+    .mode-card {
+      text-align: left; padding: 14px; background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(246,241,255,.9)); color: var(--ink); border: 4px solid transparent;
+    }
+    .mode-card h3 { margin: 0 0 8px; font-size: 24px; }
+    .mode-card p { margin: 4px 0; font-size: 14px; line-height: 1.35; }
+    .mode-card.easy { border-color: #9ef0c0; }
+    .mode-card.standard { border-color: #7bdff2; }
+    .mode-card.challenge { border-color: #ff7ac6; }
+    .split { display: grid; grid-template-columns: 1.1fr .9fr; gap: 12px; min-height: 0; }
+    .panel-title { font-size: 26px; font-weight: 900; margin: 0 0 6px; }
+    .panel-sub { margin: 0 0 12px; opacity: .92; }
+    .map-node {
+      min-height: 88px; padding: 10px; border-radius: 18px; border: 3px solid rgba(255,255,255,.15);
+      background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.08)); color: white; font-weight: 900; position: relative;
+    }
+    .map-node.locked { opacity: .42; filter: grayscale(.35); }
+    .map-node.current { outline: 4px solid var(--gold); animation: pulse 1.5s infinite; }
+    .map-node .tiny { font-size: 12px; opacity: .95; font-weight: 700; }
+    .map-node .stage-type { font-size: 24px; }
+    .stage-btn { background: transparent; color: inherit; width: 100%; }
+    .battle-wrap { display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px; min-height: 0; }
+    .arena {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .fighter {
+      min-height: 170px; border-radius: 24px; padding: 14px; position: relative; overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(239,231,255,.88)); color: var(--ink);
+    }
+    .fighter.enemy.boss { background: linear-gradient(180deg, #ffd6ea, #ffb8d9); }
+    .fighter .big-emoji { font-size: 72px; display: inline-block; }
+    .fighter.hit .big-emoji { animation: shake .3s linear 2; }
+    .hpbar { width: 100%; height: 16px; background: rgba(0,0,0,.12); border-radius: 999px; overflow: hidden; margin-top: 8px; }
+    .hpfill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #5ad66f, #93f18f); transition: width .35s ease; }
+    .question-box { text-align: center; }
+    .prompt { font-size: clamp(26px, 5vw, 40px); font-weight: 900; color: var(--ink); }
+    .subprompt { color: rgba(35,25,66,.75); font-size: 15px; margin-top: 6px; }
+    .choice-btn {
+      padding: 16px; font-size: clamp(22px, 4vw, 32px); background: linear-gradient(180deg, #fff, #f4efff); color: var(--ink);
+    }
+    .choice-btn.correct { background: linear-gradient(180deg, #dfffe3, #bff7c9); }
+    .choice-btn.wrong { background: linear-gradient(180deg, #ffe2e2, #ffc4c4); }
+    .typing-row { display: flex; gap: 8px; margin-top: 10px; }
+    .typing-row input {
+      flex: 1; min-height: 58px; border-radius: 18px; border: 3px solid #d6cbff; padding: 8px 14px; font-size: 28px;
+    }
+    .feedback {
+      min-height: 40px; text-align: center; font-weight: 900; font-size: 20px; color: white; text-shadow: 0 2px 10px rgba(0,0,0,.25);
+    }
+    .overlay {
+      position: fixed; inset: 0; background: rgba(20, 10, 46, .56); display: none; align-items: center; justify-content: center; padding: 14px; z-index: 50;
+    }
+    .overlay.show { display: flex; }
+    .overlay-card {
+      width: min(900px, 100%); max-height: 92vh; overflow: auto; background: linear-gradient(180deg, #fffdfd, #f6f2ff); color: var(--ink); border-radius: 28px; padding: 18px; box-shadow: var(--shadow);
+    }
+    .hint-visual, .treasure-box {
+      min-height: 140px; border-radius: 22px; background: linear-gradient(180deg, #efe8ff, #ffffff); display: flex; align-items: center; justify-content: center; padding: 14px; margin-top: 10px;
+    }
+    .block-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .block { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(180deg, var(--mint), #67d98e); }
+    .tick-row { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 640px; }
+    .numline { height: 8px; background: linear-gradient(90deg, #d6cbff, #9fdcf8); border-radius: 999px; flex: 1; position: relative; }
+    .jump { position: absolute; top: -8px; height: 24px; border-top: 4px solid var(--pink); border-right: 4px solid var(--pink); border-radius: 0 10px 0 0; }
+    .reward-star { font-size: 42px; animation: spinpop .9s ease; }
+    .pet-card, .stat-box {
+      background: linear-gradient(180deg, #fff, #f1ecff); color: var(--ink); border-radius: 18px; padding: 12px; min-height: 100px;
+    }
+    .list { display: flex; flex-direction: column; gap: 8px; }
+    .list-item { background: linear-gradient(180deg, #fff, #f1edff); color: var(--ink); border-radius: 16px; padding: 12px; }
+    .footer-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .muted { opacity: .75; }
+    .tiny-text { font-size: 12px; opacity: .8; }
+    .celebrate { animation: floaty 1.1s ease-in-out infinite; }
+    .sparkle-bg::before, .sparkle-bg::after {
+      content: '✨'; position: absolute; font-size: 22px; animation: twinkle 1.8s infinite;
+    }
+    .sparkle-bg::before { left: 12px; top: 12px; }
+    .sparkle-bg::after { right: 14px; bottom: 12px; animation-delay: .7s; }
+    .chip.ok { background: rgba(90,214,111,.22); }
+    .chip.warn { background: rgba(255,209,102,.26); }
+    .chip.bad { background: rgba(255,107,107,.22); }
+    .settings-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid rgba(35,25,66,.1); }
+    .settings-row:last-child { border-bottom: 0; }
+    .toggle { width: 68px; height: 38px; border-radius: 999px; background: #d9d0ff; position: relative; cursor: pointer; }
+    .toggle::after { content: ''; width: 30px; height: 30px; border-radius: 50%; position: absolute; top: 4px; left: 4px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,.15); transition: left .2s ease; }
+    .toggle.on { background: linear-gradient(90deg, #7bdff2, #9ef0c0); }
+    .toggle.on::after { left: 34px; }
+    .shake { animation: shake .35s linear 2; }
+    .flash { animation: flash .5s ease; }
+    .confetti {
+      position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 30;
+    }
+    .confetti-piece {
+      position: absolute; width: 12px; height: 18px; opacity: .92; border-radius: 4px; animation: fall linear forwards;
+    }
+    @keyframes bob { 0%,100%{ transform: translateY(0)} 50%{ transform: translateY(-8px)} }
+    @keyframes pulse { 0%,100%{ transform: scale(1)} 50%{ transform: scale(1.04)} }
+    @keyframes shake { 0%,100%{ transform: translateX(0)} 25%{ transform: translateX(-5px) rotate(-2deg)} 75%{ transform: translateX(5px) rotate(2deg)} }
+    @keyframes flash { 0%{ filter: brightness(1)} 50%{ filter: brightness(1.5)} 100%{ filter: brightness(1)} }
+    @keyframes spinpop { 0%{ transform: scale(.5) rotate(-20deg); opacity:0 } 100%{ transform: scale(1) rotate(0); opacity:1 } }
+    @keyframes twinkle { 0%,100%{ transform: scale(.8); opacity:.5 } 50%{ transform: scale(1.2); opacity:1 } }
+    @keyframes floaty { 0%,100%{ transform: translateY(0)} 50%{ transform: translateY(-5px)} }
+    @keyframes fall { to { transform: translateY(110vh) rotate(540deg); opacity: .9; } }
+    @media (max-width: 980px) {
+      .split, .arena, .mode-grid, .reward-grid { grid-template-columns: 1fr; }
+      .btn-grid, .stats-grid, .choice-grid { grid-template-columns: 1fr; }
+      .title { margin-top: 8px; }
+    }
+    @media (max-width: 640px) {
+      .hero-monsters { gap: 12px; }
+      .monster-token { width: 92px; height: 92px; }
+      .fighter .big-emoji { font-size: 54px; }
+      .map-node { width: 60px; height: 60px; }
+      .map-node.boss-node { width: 68px; height: 68px; }
+      .map-node.superboss-node { width: 76px; height: 76px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app"></div>
+  <div id="overlay" class="overlay"></div>
+  <div id="confetti" class="confetti"></div>
+  <script>
+    const SAVE_KEY = 'monster_treasure_math_v1';
+    const STAGES_PER_WORLD = 30;
+    const MONSTERS = [
+      { id: 'sproutlet', name: 'Sproutlet', emoji: '🌱', color: '#9ef0c0', flavor: 'A cheerful leaf buddy.' },
+      { id: 'embercub', name: 'Embercub', emoji: '🔥', color: '#ffd166', flavor: 'A cozy flame cub.' },
+      { id: 'bubbloom', name: 'Bubbloom', emoji: '🫧', color: '#7bdff2', flavor: 'A giggly bubble sprite.' },
+      { id: 'thornzilla', name: 'Thornzilla', emoji: '🐲', color: '#b28dff', flavor: 'A spiky map boss.' },
+      { id: 'trexel', name: 'Trexel', emoji: '🦖', color: '#ff7ac6', flavor: 'A super boss treasure guardian.' }
+    ];
+    const PETS = [
+      { id: 'moonmoth', name: 'Moonmoth', emoji: '🦋' },
+      { id: 'pufffox', name: 'Pufffox', emoji: '🦊' },
+      { id: 'pebbletoad', name: 'Pebbletoad', emoji: '🐸' }
+    ];
+    const BADGES = [
+      { id: 'star_starter', name: 'Star Starter', stage: 5, emoji: '🏅' },
+      { id: 'treasure_talent', name: 'Treasure Talent', stage: 10, emoji: '🎖️' },
+      { id: 'math_mender', name: 'Math Mender', stage: 20, emoji: '🏆' },
+      { id: 'super_seeker', name: 'Super Seeker', stage: 30, emoji: '👑' }
+    ];
+    const MODE_META = {
+      easy: { label: 'Easy', choices: 3, typing: false, support: 'high', desc: 'Gentle starts, lots of help, 3 choices.' },
+      standard: { label: 'Standard', choices: 4, typing: false, support: 'medium', desc: 'Balanced challenge, word problems, 4 choices.' },
+      challenge: { label: 'Challenge', choices: 4, typing: true, support: 'lower', desc: 'Faster ramp, typed answers too, trickier math.' }
+    };
+    const WORD_NAMES = ['Lia', 'Owen', 'Mia', 'Noah', 'Ava', 'Leo', 'Ivy', 'Max'];
+    const LOCATIONS = ['crystal cave', 'treasure beach', 'glow forest', 'rainbow camp', 'moon market'];
+
+    function defaultSave() {
+      return {
+        screen: 'title',
+        mode: null,
+        player: {
+          name: 'Player 1',
+          hearts: 5,
+          maxHearts: 5,
+          stars: 0,
+          badges: [],
+          pets: [],
+          currentStage: 1,
+          unlockedStages: [1],
+          currentWorld: 1,
+          streak: 0,
+          playTimeMs: 0,
+          startedAt: Date.now()
+        },
+        session: {
+          stageNumber: null,
+          isBoss: false,
+          isSuperBoss: false,
+          questionsTotal: 0,
+          questionsAnswered: 0,
+          correctCount: 0,
+          wrongCount: 0,
+          wrongInStage: 0,
+          rewardPreview: null,
+          stageStarAward: 0
+        },
+        battle: {
+          enemyId: null,
+          enemyName: '',
+          enemyEmoji: '👾',
+          enemyHp: 0,
+          enemyMaxHp: 0,
+          playerHp: 0,
+          playerMaxHp: 0,
+          currentQuestion: null,
+          currentChoices: [],
+          inputMode: 'choice',
+          hintLevel: 0,
+          typedAnswer: '',
+          feedback: '',
+          lastAnswerCorrect: null,
+          lockAnswers: false,
+          animationFlags: {}
+        },
+        parentPanel: {
+          missedProblems: [],
+          skillStats: {},
+          hintUsage: {},
+          recentSessions: []
+        },
+        settings: {
+          soundOn: true,
+          musicOn: false,
+          reduceMotion: false
+        }
+      };
+    }
+
+    let gameState = loadSave();
+
+    function loadSave() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return defaultSave();
+        const parsed = JSON.parse(raw);
+        return mergeDeep(defaultSave(), parsed);
+      } catch (e) {
+        return defaultSave();
+      }
+    }
+
+    function saveGame() {
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+      } catch (e) {}
+    }
+
+    function mergeDeep(base, extra) {
+      const out = Array.isArray(base) ? [...base] : { ...base };
+      for (const key in extra) {
+        if (extra[key] && typeof extra[key] === 'object' && !Array.isArray(extra[key]) && base[key] && typeof base[key] === 'object' && !Array.isArray(base[key])) {
+          out[key] = mergeDeep(base[key], extra[key]);
+        } else {
+          out[key] = extra[key];
+        }
+      }
+      return out;
+    }
+
+    function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+    function uniqChoices(answer, count, spread=10) {
+      const set = new Set([answer]);
+      while (set.size < count) {
+        const delta = rand(1, spread);
+        const sign = Math.random() < 0.5 ? -1 : 1;
+        const val = Math.max(0, answer + delta * sign);
+        set.add(val);
+      }
+      return shuffle([...set]);
+    }
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+    function isBoss(stage) { return stage % 5 === 0; }
+    function isSuperBoss(stage) { return stage % 10 === 0; }
+    function choiceCount() { return MODE_META[gameState.mode || 'easy'].choices; }
+    function elapsedMinutes(ms) { return Math.round(ms / 60000); }
+    function stageQuestions(stage) {
+      if (isSuperBoss(stage)) return 6;
+      if (isBoss(stage)) return 5;
+      if (stage <= 5) return 3;
+      return 4;
+    }
+    function addPlayTime() {
+      const now = Date.now();
+      const startedAt = gameState.player.startedAt || now;
+      gameState.player.playTimeMs += Math.max(0, now - startedAt);
+      gameState.player.startedAt = now;
+    }
+
+    function getSkillPool(mode, stage) {
+      if (mode === 'easy') {
+        if (stage <= 10) return ['add20', 'sub20', 'add100_easy'];
+        if (stage <= 20) return ['add100_easy', 'sub100_easy', 'word_addsub_easy'];
+        return ['add100', 'sub100', 'word_addsub_easy', 'word_addsub'];
+      }
+      if (mode === 'standard') {
+        if (stage <= 10) return ['add100_easy', 'sub100_easy', 'word_addsub_easy', 'add100'];
+        if (stage <= 20) return ['add100', 'sub100', 'word_addsub', 'missing_number', stage >= 18 ? 'mult_intro' : 'word_addsub_easy'];
+        return ['add100', 'sub100', 'word_addsub', 'missing_number', 'mult_intro', 'div_intro', 'multi_step'];
+      }
+      if (stage <= 10) return ['add100', 'sub100', 'word_addsub', 'missing_number', 'mult_intro'];
+      if (stage <= 20) return ['add100', 'sub100', 'word_addsub', 'mult_intro', 'div_intro', 'multi_step'];
+      return ['add100', 'sub100', 'word_addsub', 'mult_intro', 'div_intro', 'multi_step', 'fact_family'];
+    }
+
+    function generateQuestion(mode, stage) {
+      const skill = pick(getSkillPool(mode, stage));
+      switch (skill) {
+        case 'add20': return makeAddQuestion(20, skill, false);
+        case 'sub20': return makeSubQuestion(20, skill, false);
+        case 'add100_easy': return makeAddQuestion(100, 'add100', true);
+        case 'sub100_easy': return makeSubQuestion(100, 'sub100', true);
+        case 'add100': return makeAddQuestion(100, 'add100', false);
+        case 'sub100': return makeSubQuestion(100, 'sub100', false);
+        case 'word_addsub_easy': return makeWordAddSub(true);
+        case 'word_addsub': return makeWordAddSub(false);
+        case 'missing_number': return makeMissingNumber();
+        case 'mult_intro': return makeMultIntro(stage);
+        case 'div_intro': return makeDivIntro(stage);
+        case 'multi_step': return makeMultiStep();
+        case 'fact_family': return makeFactFamily();
+        default: return makeAddQuestion(20, 'add20', false);
+      }
+    }
+
+    function addHintStrategy(a, b) {
+      const answer = a + b;
+      const big = Math.max(a, b), small = Math.min(a, b);
+      const onesOfBig = big % 10;
+      const distToNextTen = onesOfBig === 0 ? 0 : 10 - onesOfBig;
+      if (distToNextTen > 0 && distToNextTen <= 4 && small >= distToNextTen) {
+        const nextTen = big + distToNextTen;
+        const leftover = small - distToNextTen;
+        return { strategy: 'make10', explanation: `🔟 Make-a-10 trick! ${big} is only ${distToNextTen} away from ${nextTen}. Take ${distToNextTen} from the ${small} to fill up to ${nextTen}, then add the leftover ${leftover}. So: ${nextTen} + ${leftover} = ${answer}.` };
+      }
+      if (a % 5 === 0 && b % 5 === 0) {
+        const steps = b / 5;
+        return { strategy: 'fives', explanation: `✋ Count by 5s! Both numbers are multiples of 5. Hop from ${a}: ${Array.from({length: steps}, (_, i) => a + (i+1)*5).join(', ')}. That lands on ${answer}.` };
+      }
+      if (a % 5 === 0 || b % 5 === 0) {
+        const fiveNum = a % 5 === 0 ? a : b;
+        const other = a % 5 === 0 ? b : a;
+        return { strategy: 'fives', explanation: `✋ ${fiveNum} is a friendly 5-number! Start at ${fiveNum} and count up ${other} more. Or split ${other} to hit a tidy 5 or 10 on the way.` };
+      }
+      const tens_a = Math.floor(a/10), ones_a = a % 10;
+      const tens_b = Math.floor(b/10), ones_b = b % 10;
+      return { strategy: 'tensOnes', explanation: `🧱 Break into tens and ones: ${a} = ${tens_a*10} + ${ones_a}. ${b} = ${tens_b*10} + ${ones_b}. Add the tens first: ${tens_a*10} + ${tens_b*10} = ${(tens_a+tens_b)*10}. Then add the ones: ${ones_a} + ${ones_b} = ${ones_a+ones_b}. Put them together: ${answer}.` };
+    }
+
+    function subHintStrategy(a, b) {
+      const answer = a - b;
+      const onesOfA = a % 10;
+      const nearestTenBelow = a - onesOfA;
+      if (onesOfA > 0 && b > onesOfA) {
+        const leftover = b - onesOfA;
+        return { strategy: 'jumpTen', explanation: `🔟 Jump-to-10 trick! Hop from ${a} down to ${nearestTenBelow} first (that uses ${onesOfA} of your ${b}). Then subtract ${leftover} more from ${nearestTenBelow}: ${nearestTenBelow} − ${leftover} = ${answer}.` };
+      }
+      if (a % 5 === 0 && b % 5 === 0) {
+        const steps = b / 5;
+        return { strategy: 'fives', explanation: `✋ Count back by 5s! Start at ${a} and hop back ${steps} time${steps!==1?'s':''}: ${Array.from({length:steps+1},(_,i)=>a-i*5).join(' → ')}. You land on ${answer}.` };
+      }
+      return { strategy: 'thinkAdd', explanation: `🔁 Think addition! Instead of subtracting, ask: "${b} + ___ = ${a}?" Start at ${b} and count up until you reach ${a}. How many steps? That's your answer: ${answer}.` };
+    }
+
+    function makeAddQuestion(max, skill, easy) {
+      let a, b;
+      if (max === 20) {
+        a = rand(1, 12); b = rand(1, 8);
+      } else if (easy) {
+        a = rand(10, 60); b = rand(1, 30);
+      } else {
+        a = rand(10, 79); b = rand(10, 29);
+      }
+      const answer = a + b;
+      const hint = addHintStrategy(a, b);
+      return {
+        skill,
+        prompt: `${a} + ${b} = ?`,
+        subprompt: 'Tap the best answer.',
+        answer,
+        choices: uniqChoices(answer, choiceCount(), 12),
+        hintType: 'numberLine',
+        visualModel: { type: 'blocks', addends: [a, b], strategy: hint.strategy },
+        explanation: hint.explanation
+      };
+    }
+
+    function makeSubQuestion(max, skill, easy) {
+      let a, b;
+      if (max === 20) {
+        a = rand(6, 20); b = rand(1, a - 1);
+      } else if (easy) {
+        a = rand(20, 90); b = rand(1, Math.min(25, a - 1));
+      } else {
+        a = rand(30, 99); b = rand(10, Math.min(49, a - 1));
+      }
+      const answer = a - b;
+      const hint = subHintStrategy(a, b);
+      return {
+        skill,
+        prompt: `${a} - ${b} = ?`,
+        subprompt: 'Tap the best answer.',
+        answer,
+        choices: uniqChoices(answer, choiceCount(), 12),
+        hintType: 'numberLine',
+        visualModel: { type: 'subBlocks', total: a, removed: b, strategy: hint.strategy },
+        explanation: hint.explanation
+      };
+    }
+
+    function makeWordAddSub(easy) {
+      const name = pick(WORD_NAMES);
+      const item = pick(['gems', 'shells', 'keys', 'berries', 'coins']);
+      const place = pick(LOCATIONS);
+      const a = easy ? rand(4, 28) : rand(12, 58);
+      const b = easy ? rand(2, 16) : rand(8, 35);
+      const useAdd = Math.random() < 0.5;
+      const answer = useAdd ? a + b : Math.max(0, a - Math.min(b, a - 1));
+      const prompt = useAdd
+        ? `${name} found ${a} ${item} at the ${place}. Then ${name} found ${b} more. How many ${item} are there now?`
+        : `${name} had ${a} ${item} at the ${place}. ${Math.min(b, a - 1)} were used. How many ${item} are left?`;
+      return {
+        skill: 'word_addsub',
+        prompt,
+        subprompt: 'Read the story and choose the answer.',
+        answer,
+        choices: uniqChoices(answer, choiceCount(), 15),
+        hintType: useAdd ? 'blocks' : 'numberLine',
+        visualModel: useAdd ? { type: 'groups', groups: [a, b] } : { type: 'numberLine', start: a, jump: Math.min(b, a - 1), end: answer },
+        explanation: useAdd ? `The story says more were found, so we add: ${a} + ${b} = ${answer}. Look for words like "more", "found", or "joined" — those always mean add.` : `The story says some were used up, so we subtract: ${a} − ${Math.min(b, a-1)} = ${answer}. Look for words like "used", "left", or "gave away" — those always mean subtract.`
+      };
+    }
+
+    function makeMissingNumber() {
+      const a = rand(8, 55);
+      const b = rand(6, 35);
+      const c = a + b;
+      const pattern = pick(['a', 'b']);
+      const prompt = pattern === 'a' ? `? + ${b} = ${c}` : `${a} + ? = ${c}`;
+      const answer = pattern === 'a' ? a : b;
+      return {
+        skill: 'missing_number',
+        prompt,
+        subprompt: 'Find the number that makes it true.',
+        answer,
+        choices: uniqChoices(answer, choiceCount(), 10),
+        hintType: 'blocks',
+        visualModel: { type: 'equation', a, b, c, pattern },
+        explanation: `The total is ${c}. You can find the missing part by subtracting the known part: ${c} − ${pattern === 'a' ? b : a} = ${answer}. Plug it back in to check: ${pattern === 'a' ? answer : a} + ${pattern === 'a' ? b : answer} = ${c} ✓`
+      };
+    }
+
+    function makeMultIntro(stage) {
+      const rows = rand(2, stage >= 20 ? 6 : 4);
+      const cols = rand(2, 5);
+      const answer = rows * cols;
+      return {
+        skill: 'mult_intro',
+        prompt: `${rows} groups of ${cols} = ?`,
+        subprompt: 'Think repeated addition.',
+        answer,
+        choices: uniqChoices(answer, choiceCount(), 8),
+        hintType: 'groups',
+        visualModel: { type: 'array', rows, cols },
+        explanation: `${rows} groups of ${cols} = ${cols} added ${rows} times = ${Array.from({length:rows},()=>cols).join(' + ')} = ${answer}. Each group has the same count!`
+      };
+    }
+
+    function makeDivIntro(stage) {
+      const groups = rand(2, stage >= 20 ? 5 : 4);
+      const each = rand(2, 6);
+      const total = groups * each;
+      return {
+        skill: 'div_intro',
+        prompt: `${total} shared into ${groups} equal groups = ? in each group`,
+        subprompt: 'Think sharing fairly.',
+        answer: each,
+        choices: uniqChoices(each, choiceCount(), 7),
+        hintType: 'groups',
+        visualModel: { type: 'share', total, groups, each },
+        explanation: `Share ${total} into ${groups} equal groups: give 1 to each group at a time until they're all gone. Each group ends up with ${each}. Check: ${groups} × ${each} = ${total} ✓`
+      };
+    }
+
+    function makeMultiStep() {
+      const a = rand(15, 40);
+      const b = rand(10, 30);
+      const c = rand(4, 18);
+      const answer = a + b - c;
+      return {
+        skill: 'multi_step',
+        prompt: `${a} + ${b} - ${c} = ?`,
+        subprompt: 'Solve one step at a time.',
+        answer,
+        choices: uniqChoices(answer, choiceCount(), 12),
+        hintType: 'steps',
+        visualModel: { type: 'steps', a, b, c, middle: a + b },
+        explanation: `Do one step at a time. First: ${a} + ${b} = ${a+b}. Now use that result: ${a+b} − ${c} = ${answer}. Cover up the last part while you solve the first step.`
+      };
+    }
+
+    function makeFactFamily() {
+      const a = rand(2, 9);
+      const b = rand(2, 9);
+      const total = a * b;
+      const prompt = pick([
+        `${a} × ${b} = ?`,
+        `${total} ÷ ${a} = ?`,
+        `${total} ÷ ${b} = ?`
+      ]);
+      let answer;
+      if (prompt.includes('×')) answer = total;
+      else if (prompt.includes(`÷ ${a}`)) answer = b;
+      else answer = a;
+      return {
+        skill: 'fact_family',
+        prompt,
+        subprompt: 'Use the fact family to help.',
+        answer,
+        choices: uniqChoices(answer, choiceCount(), 9),
+        hintType: 'groups',
+        visualModel: { type: 'factFamily', a, b, total },
+        explanation: `The numbers ${a}, ${b}, and ${total} are a fact family. ${a} × ${b} = ${total}. So ${total} ÷ ${a} = ${b} and ${total} ÷ ${b} = ${a}. Find which fact matches the question.`
+      };
+    }
+
+    function makeEnemy(stage) {
+      const boss = isBoss(stage);
+      const superBoss = isSuperBoss(stage);
+      if (superBoss) return { name: 'Trexel', emoji: '🦖', hp: 6, boss: true, superBoss: true };
+      if (boss) return { name: 'Thornzilla', emoji: '🐲', hp: 5, boss: true, superBoss: false };
+      const pool = [
+        { name: 'Sprout Snail', emoji: '🐌' },
+        { name: 'Cloud Cub', emoji: '🐻' },
+        { name: 'Spark Bat', emoji: '🦇' },
+        { name: 'Pebble Puff', emoji: '🐣' },
+        { name: 'Glimmer Bug', emoji: '🐞' }
+      ];
+      const m = pick(pool);
+      return { ...m, hp: stage <= 5 ? 3 : 4, boss: false, superBoss: false };
+    }
+
+    function startGame(mode) {
+      gameState.mode = mode;
+      gameState.screen = 'profile';
+      saveGame();
+      render();
+    }
+
+    function continueFromProfile() {
+      gameState.screen = 'map';
+      gameState.player.startedAt = Date.now();
+      saveGame();
+      render();
+    }
+
+    function setScreen(screen) {
+      gameState.screen = screen;
+      saveGame();
+      render();
+    }
+
+    function ensureUnlocked(stage) {
+      if (!gameState.player.unlockedStages.includes(stage)) gameState.player.unlockedStages.push(stage);
+      gameState.player.unlockedStages = [...new Set(gameState.player.unlockedStages)].sort((a,b)=>a-b);
+    }
+
+    function startStage(stage) {
+      const enemy = makeEnemy(stage);
+      gameState.session = {
+        stageNumber: stage,
+        isBoss: !!enemy.boss,
+        isSuperBoss: !!enemy.superBoss,
+        questionsTotal: stageQuestions(stage),
+        questionsAnswered: 0,
+        correctCount: 0,
+        wrongCount: 0,
+        wrongInStage: 0,
+        rewardPreview: null,
+        stageStarAward: 0
+      };
+      gameState.battle = {
+        enemyId: enemy.name.toLowerCase().replace(/\s+/g,'_'),
+        enemyName: enemy.name,
+        enemyEmoji: enemy.emoji,
+        enemyHp: enemy.hp,
+        enemyMaxHp: enemy.hp,
+        playerHp: Math.max(1, Math.ceil(gameState.player.hearts)),
+        playerMaxHp: gameState.player.maxHearts,
+        currentQuestion: null,
+        currentChoices: [],
+        inputMode: 'choice',
+        hintLevel: 0,
+        typedAnswer: '',
+        feedback: '',
+        lastAnswerCorrect: null,
+        lockAnswers: false,
+        animationFlags: {}
+      };
+      nextQuestion();
+      gameState.screen = 'stageIntro';
+      saveGame();
+      render();
+    }
+
+    function launchBattle() {
+      gameState.screen = 'battle';
+      saveGame();
+      render();
+    }
+
+    function nextQuestion() {
+      const q = generateQuestion(gameState.mode || 'easy', gameState.session.stageNumber || 1);
+      gameState.battle.currentQuestion = q;
+      gameState.battle.currentChoices = q.choices;
+      gameState.battle.hintLevel = 0;
+      gameState.battle.typedAnswer = '';
+      gameState.battle.feedback = '';
+      gameState.battle.lastAnswerCorrect = null;
+      gameState.battle.lockAnswers = false;
+    }
+
+    function skillStat(skill) {
+      if (!gameState.parentPanel.skillStats[skill]) gameState.parentPanel.skillStats[skill] = { correct: 0, wrong: 0 };
+      return gameState.parentPanel.skillStats[skill];
+    }
+
+    function recordMiss(question, finalMiss=false) {
+      const key = question.skill;
+      gameState.parentPanel.hintUsage[key] = (gameState.parentPanel.hintUsage[key] || 0) + 1;
+      if (finalMiss) {
+        gameState.parentPanel.missedProblems.unshift({
+          when: new Date().toLocaleString(),
+          skill: question.skill,
+          prompt: question.prompt,
+          answer: question.answer,
+          stage: gameState.session.stageNumber,
+          mode: gameState.mode,
+          hints: gameState.battle.hintLevel
+        });
+        gameState.parentPanel.missedProblems = gameState.parentPanel.missedProblems.slice(0, 25);
+      }
+    }
+
+    function loseHeart() {
+      gameState.player.hearts = Math.max(0, gameState.player.hearts - 1);
+      if (gameState.player.hearts <= 0) {
+        addSessionRecord(false);
+        gameState.screen = 'gameOver';
+        saveGame();
+        render();
+      }
+    }
+
+    function checkAnswer(value) {
+      if (gameState.battle.lockAnswers) return;
+      const q = gameState.battle.currentQuestion;
+      const answer = Number(value);
+      const isCorrect = answer === Number(q.answer);
+      gameState.battle.lockAnswers = true;
+      if (isCorrect) {
+        gameState.battle.feedback = '✨ Great job!';
+        gameState.battle.lastAnswerCorrect = true;
+        gameState.session.correctCount += 1;
+        gameState.session.questionsAnswered += 1;
+        gameState.player.streak += 1;
+        skillStat(q.skill).correct += 1;
+        gameState.battle.enemyHp = Math.max(0, gameState.battle.enemyHp - 1);
+        beepGood();
+        if (!gameState.settings.reduceMotion) spawnConfetti(20);
+        setTimeout(() => {
+          if (gameState.session.questionsAnswered >= gameState.session.questionsTotal || gameState.battle.enemyHp <= 0) {
+            completeStage();
+          } else {
+            nextQuestion();
+            gameState.battle.lockAnswers = false;
+            render();
+          }
+        }, 700);
+      } else {
+        gameState.battle.lastAnswerCorrect = false;
+        gameState.session.wrongCount += 1;
+        gameState.session.wrongInStage += 1;
+        gameState.player.streak = 0;
+        skillStat(q.skill).wrong += 1;
+        beepBad();
+        gameState.battle.feedback = '💡 Let\'s try a hint!';
+        gameState.battle.hintLevel += 1;
+        // Small delay so the wrong-answer shake plays before overlay appears
+        setTimeout(() => {
+          // Clear the highlight BEFORE showing the hint overlay
+          gameState.battle.lastAnswerCorrect = null;
+          if (gameState.battle.hintLevel >= 3) {
+            recordMiss(q, true);
+            loseHeart();
+            if (gameState.screen === 'gameOver') return;
+            gameState.session.questionsAnswered += 1;
+            if (gameState.session.questionsAnswered >= gameState.session.questionsTotal) {
+              completeStage();
+            } else {
+              showHintOverlay(true);
+            }
+          } else {
+            recordMiss(q, false);
+            showHintOverlay(false);
+          }
+          saveGame();
+          render();
+        }, 600);
+      }
+      saveGame();
+      render();
+    }
+
+    function submitTypedAnswer() {
+      const raw = gameState.battle.typedAnswer.trim();
+      if (!raw) return;
+      checkAnswer(Number(raw));
+    }
+
+    function completeStage() {
+      const stage = gameState.session.stageNumber;
+      let stars = 1;
+      if (gameState.session.wrongCount === 0) stars += 1;
+      gameState.session.stageStarAward = stars;
+      gameState.session.wasFlawless = gameState.session.wrongCount === 0;
+      gameState.player.stars += stars;
+      if (gameState.player.hearts < gameState.player.maxHearts) gameState.player.hearts += 1;
+      const next = Math.min(STAGES_PER_WORLD, stage + 1);
+      gameState.player.currentStage = Math.max(gameState.player.currentStage, next);
+      ensureUnlocked(next);
+      gameState.player.currentWorld = Math.ceil(stage / 10);
+      grantMilestones(stage);
+      addSessionRecord(true);
+      gameState.screen = 'reward';
+      saveGame();
+      render();
+      if (!gameState.settings.reduceMotion) spawnConfetti(isSuperBoss(stage) ? 70 : isBoss(stage) ? 45 : 25);
+    }
+
+    function addSessionRecord(won) {
+      addPlayTime();
+      gameState.parentPanel.recentSessions.unshift({
+        when: new Date().toLocaleString(),
+        mode: gameState.mode,
+        stage: gameState.session.stageNumber,
+        won,
+        correct: gameState.session.correctCount,
+        wrong: gameState.session.wrongCount
+      });
+      gameState.parentPanel.recentSessions = gameState.parentPanel.recentSessions.slice(0, 15);
+    }
+
+    function grantMilestones(stage) {
+      const badge = BADGES.find(b => b.stage === stage);
+      if (badge && !gameState.player.badges.includes(badge.id)) gameState.player.badges.push(badge.id);
+      if (isSuperBoss(stage)) {
+        const pet = PETS[(stage / 10 - 1) % PETS.length];
+        if (pet && !gameState.player.pets.includes(pet.id)) gameState.player.pets.push(pet.id);
+        if (gameState.player.maxHearts < 6) gameState.player.maxHearts = 6;
+      }
+    }
+
+    function openOverlay(html) {
+      const overlay = document.getElementById('overlay');
+      overlay.innerHTML = `<div class="overlay-card">${html}</div>`;
+      overlay.classList.add('show');
+    }
+    function closeOverlay() {
+      const overlay = document.getElementById('overlay');
+      overlay.classList.remove('show');
+      overlay.innerHTML = '';
+    }
+
+    function showHintOverlay(finalMiss) {
+      const q = gameState.battle.currentQuestion;
+      const visual = renderHintVisual(q);
+      const level = gameState.battle.hintLevel;
+      const title = finalMiss ? '💡 Let\'s learn it together!' : level === 1 ? '💡 Hint — Try this trick!' : '💡 Bigger Hint — Step by step!';
+      const text = level <= 1 ? q.explanation : strongerHint(q);
+      const actionText = finalMiss ? 'Got it — next question!' : 'Got it — let me try again!';
+      openOverlay(`
+        <h2 class="panel-title">${title}</h2>
+        <p style="font-size:17px;line-height:1.55;">${text}</p>
+        <div class="hint-visual">${visual}</div>
+        <div class="footer-actions" style="margin-top:12px;">
+          <button class="btn" onclick="closeHint(${finalMiss ? 'true' : 'false'})">${actionText}</button>
+        </div>
+      `);
+    }
+
+    window.closeHint = function(finalMiss) {
+      closeOverlay();
+      if (finalMiss) {
+        nextQuestion();
+      }
+      gameState.battle.lockAnswers = false;
+      render();
+    }
+
+    function strongerHint(q) {
+      const v = q.visualModel || {};
+      switch (q.skill) {
+        case 'add20':
+        case 'add100': {
+          const a = v.addends?.[0], b = v.addends?.[1];
+          if (v.strategy === 'make10') {
+            const big = Math.max(a,b), small = Math.min(a,b);
+            const dist = 10 - (big % 10);
+            const nextTen = big + dist;
+            const leftover = small - dist;
+            return `Let's walk through it: Start with ${big}. It needs ${dist} more to reach ${nextTen}. Take ${dist} from the ${small} → ${small} − ${dist} = ${leftover} left over. Now: ${nextTen} + ${leftover} = ${a+b}. ✅`;
+          }
+          if (v.strategy === 'fives') {
+            const big = Math.max(a,b), small = Math.min(a,b);
+            return `Start at ${big}. Count up by 5s: ${Array.from({length: Math.ceil(small/5)}, (_,i) => big+(i+1)*5).filter(n=>n<=a+b).join(' → ')}. Keep going until you've added all ${small}. Answer: ${a+b}.`;
+          }
+          if (a !== undefined && b !== undefined) {
+            const tens_a = Math.floor(a/10), ones_a = a%10, tens_b = Math.floor(b/10), ones_b = b%10;
+            return `Let's break it down fully: ${a} = ${tens_a*10} + ${ones_a}. ${b} = ${tens_b*10} + ${ones_b}. Tens: ${tens_a*10} + ${tens_b*10} = ${(tens_a+tens_b)*10}. Ones: ${ones_a} + ${ones_b} = ${ones_a+ones_b}. Total: ${(tens_a+tens_b)*10} + ${ones_a+ones_b} = ${a+b}. ✅`;
+          }
+          return 'Break both numbers into tens and ones, add the tens, add the ones, combine.';
+        }
+        case 'sub20':
+        case 'sub100': {
+          const total = v.total, removed = v.removed;
+          if (v.strategy === 'jumpTen' && total !== undefined) {
+            const nearestTen = total - (total % 10);
+            const firstHop = total % 10;
+            const secondHop = removed - firstHop;
+            return `Step by step: ${total} − ${firstHop} = ${nearestTen} (land on the 10). Then ${nearestTen} − ${secondHop} = ${total - removed}. Answer: ${total - removed}. ✅`;
+          }
+          if (v.strategy === 'fives' && total !== undefined) {
+            const steps = removed / 5;
+            return `Count back by 5s from ${total}: ${Array.from({length:steps+1},(_,i)=>total-i*5).join(' → ')}. Answer: ${total - removed}. ✅`;
+          }
+          if (total !== undefined) return `Think addition: ${removed} + ___ = ${total}. Start at ${removed} and count up: how many hops to reach ${total}? That's ${total-removed} hops. Answer: ${total-removed}. ✅`;
+          return 'Count backward from the bigger number, or think: what do I add to the small number to get the big number?';
+        }
+        case 'word_addsub':
+          return `Read the story again slowly. Circle the starting number. Ask yourself: is the story saying MORE were added, or FEWER are left? "More", "found", "joined" → add. "Used", "left", "gave away" → subtract.`;
+        case 'missing_number': {
+          const a = v?.a, b = v?.b, c = v?.c;
+          return `Total is ${c}. Known part is ${v.pattern === 'a' ? b : a}. Missing part = ${c} − ${v.pattern === 'a' ? b : a} = ${q.answer}. Check: ${v.pattern === 'a' ? q.answer : a} + ${v.pattern === 'a' ? b : q.answer} = ${c} ✅`;
+        }
+        case 'mult_intro': {
+          const rows = v?.rows, cols = v?.cols;
+          return `${rows} groups of ${cols}: ${Array.from({length:rows},()=>cols).join(' + ')} = ${rows*cols}. Count the blocks row by row in the picture above. ✅`;
+        }
+        case 'div_intro': {
+          const groups = v?.groups, each = v?.each, total = v?.total;
+          return `Deal ${total} out one at a time to ${groups} groups. Each group ends up with ${each}. Check: ${groups} × ${each} = ${total}. ✅`;
+        }
+        case 'multi_step': {
+          const a = v?.a, b = v?.b, c = v?.c;
+          return `Step 1: ${a} + ${b} = ${a+b}. Step 2: ${a+b} − ${c} = ${q.answer}. Cover the second part while you do step 1. ✅`;
+        }
+        case 'fact_family': {
+          const fa = v?.a, fb = v?.b, ft = v?.total;
+          return `${fa} × ${fb} = ${ft}. So ${ft} ÷ ${fa} = ${fb} and ${ft} ÷ ${fb} = ${fa}. Match the question to the right fact. ✅`;
+        }
+        default: return 'Try each answer choice — plug it back in and see which one makes the equation true!';
+      }
+    }
+
+    function renderHintVisual(q) {
+      const v = q.visualModel || {};
+
+      // Addition blocks — strategy-aware
+      if (v.type === 'blocks') {
+        const a = v.addends[0], b = v.addends[1];
+        const capA = Math.min(a, 10), capB = Math.min(b, 10);
+        const big = Math.max(a,b), small = Math.min(a,b);
+
+        if (v.strategy === 'make10') {
+          const onesOfBig = big % 10;
+          const distToNextTen = 10 - onesOfBig;
+          const leftover = small - distToNextTen;
+          const nextTen = big + distToNextTen;
+          return `<div>
+            <div class="tiny-text" style="text-align:center;margin-bottom:8px;">🔟 Fill up to ${nextTen}, then add the rest</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:flex-end;">
+              <div><div class="tiny-text" style="text-align:center;">${big}</div><div class="block-row">${Array.from({length:Math.min(big%10||10,10)},()=>'<div class="block"></div>').join('')}</div></div>
+              <div style="font-size:22px;font-weight:900;align-self:center;">+</div>
+              <div><div class="tiny-text" style="text-align:center;color:#ff7ac6;">${distToNextTen} fills to ${nextTen}</div><div class="block-row">${Array.from({length:distToNextTen},()=>'<div class="block" style="background:linear-gradient(180deg,#ff7ac6,#e85fb3);"></div>').join('')}</div></div>
+              ${leftover > 0 ? `<div style="font-size:22px;font-weight:900;align-self:center;">+</div><div><div class="tiny-text" style="text-align:center;color:#7bdff2;">${leftover} leftover</div><div class="block-row">${Array.from({length:leftover},()=>'<div class="block" style="background:linear-gradient(180deg,#7bdff2,#4dc8df);"></div>').join('')}</div></div>` : ''}
+            </div>
+            <div class="tiny-text" style="text-align:center;margin-top:10px;">${nextTen} + ${leftover} = <strong>${a+b}</strong></div>
+          </div>`;
+        }
+
+        return `<div>
+          <div class="tiny-text" style="text-align:center;margin-bottom:8px;">Two groups joining together</div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:flex-start;">
+            <div><div class="tiny-text" style="text-align:center;margin-bottom:4px;">${a}</div><div class="block-row">${Array.from({length: capA}, () => '<div class="block"></div>').join('')}</div></div>
+            <div style="font-size:28px;font-weight:900;line-height:1;align-self:center;">+</div>
+            <div><div class="tiny-text" style="text-align:center;margin-bottom:4px;">${b}</div><div class="block-row">${Array.from({length: capB}, () => '<div class="block" style="background:linear-gradient(180deg,#ff7ac6,#e85fb3);"></div>').join('')}</div></div>
+          </div>
+          <div class="tiny-text" style="text-align:center;margin-top:10px;">${a} + ${b} = <strong>${a+b}</strong></div>
+        </div>`;
+      }
+
+      // Subtraction blocks — strategy-aware
+      if (v.type === 'subBlocks') {
+        const { total, removed } = v;
+        if (v.strategy === 'jumpTen') {
+          const nearestTen = total - (total % 10);
+          const firstHop = total % 10;
+          const secondHop = removed - firstHop;
+          return `<div>
+            <div class="tiny-text" style="text-align:center;margin-bottom:8px;">🔟 Hop to ${nearestTen} first, then keep going</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+              ${Array.from({length: Math.min(total, 20)}, (_, i) => {
+                const pos = total - i;
+                if (pos > total - firstHop) return '<div class="block" style="background:linear-gradient(180deg,#ff7ac6,#e85fb3);opacity:0.4;"></div>';
+                if (pos > total - removed) return '<div class="block" style="background:linear-gradient(180deg,#7bdff2,#4dc8df);opacity:0.4;"></div>';
+                return '<div class="block"></div>';
+              }).join('')}
+            </div>
+            <div class="tiny-text" style="text-align:center;margin-top:8px;">Pink = first hop to ${nearestTen} · Blue = rest of the way · Answer: <strong>${total - removed}</strong></div>
+          </div>`;
+        }
+        return `<div>
+          <div class="tiny-text" style="text-align:center;margin-bottom:8px;">Some blocks stay, some are taken away</div>
+          <div class="block-row">${Array.from({length: Math.min(total, 20)}, (_, i) => `<div class="block" style="opacity:${i < Math.min(removed, 20) ? 0.2 : 1}"></div>`).join('')}</div>
+          <div class="tiny-text" style="text-align:center;margin-top:8px;">Faded = removed · Solid = what's left = <strong>${total - removed}</strong></div>
+        </div>`;
+      }
+
+      if (v.type === 'groups' || v.type === 'array') {
+        const rows = v.rows || v.groups?.length || Math.min(4, v.groups || 3);
+        const cols = v.cols || (Array.isArray(v.groups) ? Math.min(v.groups[0], 6) : 4);
+        return `<div><div class="tiny-text" style="margin-bottom:6px;">See the equal groups</div>${Array.from({length: rows}, (_, r) => `<div class="block-row" style="margin:4px 0;"><span class="tiny-text" style="width:20px;text-align:right;margin-right:6px;">×${r+1}</span>${Array.from({length: cols}, () => '<div class="block"></div>').join('')}</div>`).join('')}<div class="tiny-text" style="text-align:center;margin-top:6px;">${rows} rows × ${cols} = <strong>${rows*cols}</strong></div></div>`;
+      }
+      if (v.type === 'share') {
+        return `<div><div class="tiny-text" style="margin-bottom:6px;">Share ${v.total} into ${v.groups} equal groups</div><div style="display:grid;grid-template-columns:repeat(${v.groups},1fr);gap:8px;width:100%;">${Array.from({length: v.groups}, () => `<div class="light-card" style="min-height:80px;display:flex;align-items:center;justify-content:center;font-size:24px;">${'⭐'.repeat(Math.min(v.each, 6))}</div>`).join('')}</div><div class="tiny-text" style="text-align:center;margin-top:8px;">${v.groups} groups × ${v.each} each = ${v.total} total ✓</div></div>`;
+      }
+      if (v.type === 'numberLine') {
+        const start = v.start || 0;
+        const end = v.end || q.answer;
+        return `<div style="width:100%;max-width:640px;"><div class="tick-row"><strong>${start}</strong><div class="numline"></div><strong>${end}</strong></div><div class="tiny-text" style="text-align:center;margin-top:10px;">Hop from ${start} to ${end}. Count the jumps.</div></div>`;
+      }
+      if (v.type === 'steps') {
+        return `<div><div class="tiny-text" style="margin-bottom:6px;">Step by step — cover the next step while you solve this one!</div><div class="list"><div class="list-item">Step 1: ${v.a} + ${v.b} = <strong>${v.middle}</strong></div><div class="list-item">Step 2: ${v.middle} − ${v.c} = <strong>${q.answer}</strong></div></div></div>`;
+      }
+      if (v.type === 'equation') {
+        return `<div><div class="list-item">Total = <strong>${v.c}</strong>. Known part = <strong>${v.pattern === 'a' ? v.b : v.a}</strong>.<br/>Missing part = ${v.c} − ${v.pattern === 'a' ? v.b : v.a} = <strong>${q.answer}</strong></div></div>`;
+      }
+      if (v.type === 'factFamily') {
+        return `<div><div class="tiny-text" style="margin-bottom:6px;">These 3 numbers are a family — they all work together:</div><div class="list"><div class="list-item">${v.a} × ${v.b} = ${v.total}</div><div class="list-item">${v.total} ÷ ${v.a} = ${v.b}</div><div class="list-item">${v.total} ÷ ${v.b} = ${v.a}</div></div></div>`;
+      }
+      return `<div class="list-item">Try counting carefully and thinking about what the story is asking.</div>`;
+    }
+
+    function openParentPanel() {
+      addPlayTime();
+      gameState.screen = 'parentPanel';
+      saveGame();
+      render();
+    }
+
+    function resetProgress() {
+      if (!confirm('Reset all game progress?')) return;
+      gameState = defaultSave();
+      saveGame();
+      render();
+    }
+
+    function continueAfterReward() {
+      gameState.screen = 'map';
+      saveGame();
+      render();
+    }
+
+    function replayFromMap() {
+      gameState.player.hearts = gameState.player.maxHearts;
+      gameState.screen = 'map';
+      saveGame();
+      render();
+    }
+
+    function toggleSetting(key) {
+      gameState.settings[key] = !gameState.settings[key];
+      saveGame();
+      render();
+    }
+
+    function beepGood() {
+      if (!gameState.settings.soundOn) return;
+      beep([523.25, 659.25, 783.99], 0.08);
+    }
+    function beepBad() {
+      if (!gameState.settings.soundOn) return;
+      beep([240, 180], 0.12);
+    }
+    function beep(freqs, duration) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let time = ctx.currentTime;
+        freqs.forEach((freq, idx) => {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'triangle'; o.frequency.value = freq;
+          g.gain.setValueAtTime(0.001, time);
+          g.gain.exponentialRampToValueAtTime(0.08, time + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.001, time + duration);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(time); o.stop(time + duration);
+          time += idx === freqs.length - 1 ? 0 : duration * 0.65;
+        });
+      } catch (e) {}
+    }
+
+    function spawnConfetti(count) {
+      const wrap = document.getElementById('confetti');
+      for (let i = 0; i < count; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + 'vw';
+        piece.style.top = '-20px';
+        piece.style.background = pick(['#ffd166','#ff7ac6','#7bdff2','#9ef0c0','#ffffff']);
+        piece.style.animationDuration = (2.2 + Math.random() * 1.8) + 's';
+        piece.style.transform = `translateY(0) rotate(${Math.random()*40}deg)`;
+        wrap.appendChild(piece);
+        setTimeout(() => piece.remove(), 4500);
+      }
+    }
+
+    function currentBadgeObjects() {
+      return BADGES.filter(b => gameState.player.badges.includes(b.id));
+    }
+    function currentPetObjects() {
+      return PETS.filter(p => gameState.player.pets.includes(p.id));
+    }
+    function accuracyFor(skill) {
+      const s = gameState.parentPanel.skillStats[skill] || { correct: 0, wrong: 0 };
+      const total = s.correct + s.wrong;
+      return total ? Math.round((s.correct / total) * 100) : 0;
+    }
+
+    function topbar() {
+      const badgeCount = gameState.player.badges.length;
+      return `
+        <div class="topbar">
+          <div class="left">
+            <div class="heart-pill">❤️ ${gameState.player.hearts}/${gameState.player.maxHearts}</div>
+            <div class="star-pill">⭐ ${gameState.player.stars}</div>
+            <div class="badge-pill">🏅 ${badgeCount}</div>
+          </div>
+          <div class="right">
+            ${gameState.mode ? `<div class="chip">Mode: ${MODE_META[gameState.mode].label}</div>` : ''}
+            <button class="small-btn" onclick="setScreen('map')">🗺️ Map</button>
+            <button class="small-btn" onclick="setScreen('pause')">⏸️ Pause</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTitle() {
+      return `
+        <div class="screen">
+          <div class="title-wrap card sparkle-bg">
+            <div class="tiny-text">Cute fantasy treasure-map math adventure</div>
+            <h1 class="title">Monster Treasure Math</h1>
+            <p class="subtitle">Battle friendly monsters, unlock treasure paths, win pets and badges, and grow your math powers a little at a time.</p>
+            <div class="hero-monsters">
+              ${MONSTERS.slice(0,3).map((m,i) => `<div class="monster-token" style="animation-delay:${i*.18}s"><div class="emoji">${m.emoji}</div><div class="name">${m.name}</div></div>`).join('')}
+            </div>
+          </div>
+          <div class="light-card">
+            <div class="btn-grid">
+              <button class="btn" onclick="setScreen('modeSelect')">▶️ Play Adventure</button>
+              <button class="btn secondary" onclick="openParentPanel()">🧑 Parent Panel</button>
+              <button class="btn ghost" onclick="toggleSetting('soundOn')">${gameState.settings.soundOn ? '🔊 Sound On' : '🔈 Sound Off'}</button>
+              <button class="btn ghost" onclick="toggleSetting('reduceMotion')">${gameState.settings.reduceMotion ? '🌙 Reduce Motion' : '✨ Full Motion'}</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderModeSelect() {
+      return `
+        <div class="screen">
+          <div class="card"><h2 class="panel-title">Choose a mode</h2><p class="panel-sub">Each mode gets harder as you move along the treasure map.</p></div>
+          <div class="mode-grid">
+            <button class="mode-card easy" onclick="startGame('easy')"><h3>🌟 Easy</h3><p>Great for younger kids.</p><p>${MODE_META.easy.desc}</p></button>
+            <button class="mode-card standard" onclick="startGame('standard')"><h3>🧭 Standard</h3><p>Best all-around path.</p><p>${MODE_META.standard.desc}</p></button>
+            <button class="mode-card challenge" onclick="startGame('challenge')"><h3>⚡ Challenge</h3><p>For confident math adventurers.</p><p>${MODE_META.challenge.desc}</p></button>
+          </div>
+          <div class="footer-actions"><button class="btn secondary" onclick="setScreen('title')">⬅️ Back</button></div>
+        </div>
+      `;
+    }
+
+    function renderProfile() {
+      return `
+        <div class="screen split">
+          <div class="card sparkle-bg">
+            <h2 class="panel-title">Quick Start</h2>
+            <p class="panel-sub">Pick a name and jump right in.</p>
+            <div class="light-card">
+              <label><strong>Player name</strong></label>
+              <input aria-label="player name" value="${escapeHtml(gameState.player.name)}" oninput="gameState.player.name=this.value; saveGame();" style="width:100%;margin-top:8px;min-height:58px;border-radius:18px;border:3px solid #d6cbff;padding:10px 14px;font-size:24px;" />
+              <div class="footer-actions" style="margin-top:14px;">
+                <button class="btn" onclick="continueFromProfile()">🚀 Start Adventure</button>
+                <button class="btn secondary" onclick="setScreen('modeSelect')">⬅️ Change Mode</button>
+              </div>
+            </div>
+          </div>
+          <div class="light-card center" style="flex-direction:column;gap:10px;">
+            <div class="monster-token celebrate"><div class="emoji">🗺️</div><div class="name">Treasure Map</div></div>
+            <div style="text-align:center;">
+              <div><strong>${MODE_META[gameState.mode].label}</strong> mode selected</div>
+              <div class="muted">3 worlds, bosses every 5 stages, super bosses every 10.</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMap() {
+      const stages = Array.from({length: STAGES_PER_WORLD}, (_, i) => i + 1);
+      const currentStage = Math.min(gameState.player.currentStage, STAGES_PER_WORLD);
+
+      // World zone labels at stages 1, 11, 21
+      const WORLDS = [
+        { start: 1, end: 10, label: '🌿 World 1 — Glow Forest', color: '#9ef0c0' },
+        { start: 11, end: 20, label: '🏔️ World 2 — Crystal Peaks', color: '#7bdff2' },
+        { start: 21, end: 30, label: '🔥 World 3 — Ember Depths', color: '#ff7ac6' }
+      ];
+
+      function nodeHtml(stage) {
+        const unlocked = gameState.player.unlockedStages.includes(stage);
+        const current = stage === currentStage;
+        const done = stage < currentStage && gameState.player.unlockedStages.includes(stage);
+        const boss = isBoss(stage);
+        const superBoss = isSuperBoss(stage);
+        const icon = superBoss ? '👑' : boss ? '🐲' : done ? '✅' : '⚔️';
+        const label = superBoss ? 'Super Boss' : boss ? 'Boss' : `Stage ${stage}`;
+        let nodeClass = 'map-node';
+        if (superBoss) nodeClass += ' superboss-node';
+        else if (boss) nodeClass += ' boss-node';
+        if (!unlocked) nodeClass += ' locked';
+        if (current) nodeClass += ' current';
+        if (done && !boss && !superBoss) nodeClass += ' done';
+        return `
+          <div class="path-node-wrap">
+            <button class="${nodeClass} stage-btn" ${unlocked ? `onclick="startStage(${stage})"` : 'disabled'} title="${label}">
+              <div class="stage-type">${icon}</div>
+              <div class="tiny">${stage}</div>
+            </button>
+            <div class="stage-label" style="color:rgba(255,255,255,.7);font-size:9px;font-weight:700;">${superBoss ? '👑BOSS' : boss ? '🐲BOSS' : ''}</div>
+          </div>`;
+      }
+
+      // Build rows: 5 stages per row, alternating left-to-right and right-to-left
+      // Row 0: stages 1-5 (L→R), Row 1: stages 6-10 (R→L), etc.
+      let mapHtml = '';
+      for (let row = 0; row < 6; row++) {
+        const rowStages = stages.slice(row * 5, row * 5 + 5);
+        if (!rowStages.length) break;
+        const reversed = row % 2 === 1;
+        const displayStages = reversed ? [...rowStages].reverse() : rowStages;
+
+        // World banner before first row of each world
+        const firstStageInRow = rowStages[0];
+        const world = WORLDS.find(w => w.start === firstStageInRow);
+        if (world) {
+          mapHtml += `<div class="world-banner" style="color:${world.color};">${world.label}</div>`;
+        }
+
+        // Vertical connector above every row except the first
+        if (row > 0) {
+          const prevRowEnd = reversed ? rowStages[0] : rowStages[rowStages.length - 1];
+          const prevUnlocked = gameState.player.unlockedStages.includes(prevRowEnd);
+          const side = reversed ? 'right' : 'left';
+          mapHtml += `<div style="display:flex;justify-content:${side === 'left' ? 'flex-start' : 'flex-end'};padding:0 ${reversed ? '10%' : '8%'};"><div class="path-connector-v ${prevUnlocked ? 'unlocked' : ''}"></div></div>`;
+        }
+
+        mapHtml += `<div class="path-row ${reversed ? 'row-reverse' : ''}">`;
+        displayStages.forEach(stage => { mapHtml += nodeHtml(stage); });
+        mapHtml += `</div>`;
+      }
+
+      return `
+        <div class="screen">
+          ${topbar()}
+          <div class="split">
+            <div class="card sparkle-bg" style="overflow:hidden;">
+              <h2 class="panel-title">🗺️ Treasure Map</h2>
+              <p class="panel-sub">Follow the path — defeat monsters to unlock the next stage!</p>
+              <div class="path-map-wrap" style="max-height:58vh;">
+                <div class="path-map">${mapHtml}</div>
+              </div>
+            </div>
+            <div class="light-card">
+              <h3 class="panel-title">Adventure Bag</h3>
+              <div class="list">
+                <div class="list-item">⭐ Stars: <strong>${gameState.player.stars}</strong></div>
+                <div class="list-item">🏅 Badges: <strong>${gameState.player.badges.length}</strong></div>
+                <div class="list-item">🐾 Pets: <strong>${gameState.player.pets.length}</strong></div>
+                <div class="list-item">🔥 Streak: <strong>${gameState.player.streak}</strong></div>
+              </div>
+              <div class="reward-grid" style="margin-top:12px;">
+                ${currentBadgeObjects().slice(0,3).map(b => `<div class="pet-card"><div style="font-size:30px;">${b.emoji}</div><strong>${b.name}</strong></div>`).join('') || '<div class="pet-card">Earn badges by beating boss stages!</div>'}
+              </div>
+              <div class="footer-actions" style="margin-top:12px;">
+                <button class="btn secondary" onclick="openParentPanel()">🧑 Parent Panel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStageIntro() {
+      const s = gameState.session.stageNumber;
+      return `
+        <div class="screen split">
+          <div class="card sparkle-bg">
+            <div class="tiny-text">Stage ${s}</div>
+            <h2 class="panel-title">${gameState.battle.enemyName} appears!</h2>
+            <p class="panel-sub">${gameState.session.isSuperBoss ? 'A super boss guards the biggest treasure!' : gameState.session.isBoss ? 'A boss battle stands in your way!' : 'Win the battle by solving math problems.'}</p>
+            <div class="center" style="min-height:180px;"><div class="monster-token celebrate" style="width:140px;height:140px;"><div class="emoji" style="font-size:62px;">${gameState.battle.enemyEmoji}</div><div class="name">${gameState.battle.enemyName}</div></div></div>
+            <div class="list">
+              <div class="list-item">Questions this stage: <strong>${gameState.session.questionsTotal}</strong></div>
+              <div class="list-item">Possible reward: <strong>${gameState.session.isSuperBoss ? 'New pet + big reward' : gameState.session.isBoss ? 'Badge chance + stars' : 'Stars + a heart refill'}</strong></div>
+            </div>
+            <div class="footer-actions" style="margin-top:12px;"><button class="btn" onclick="launchBattle()">⚔️ Start Battle</button><button class="btn secondary" onclick="setScreen('map')">⬅️ Back to Map</button></div>
+          </div>
+          <div class="light-card">
+            <h3 class="panel-title">Mode rules</h3>
+            <div class="list">
+              <div class="list-item">Mode: <strong>${MODE_META[gameState.mode].label}</strong></div>
+              <div class="list-item">Choices: <strong>${MODE_META[gameState.mode].choices}</strong></div>
+              <div class="list-item">Typing: <strong>${MODE_META[gameState.mode].typing ? 'Allowed' : 'Off'}</strong></div>
+              <div class="list-item">Support: <strong>${MODE_META[gameState.mode].support}</strong></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderBattle() {
+      const q = gameState.battle.currentQuestion;
+      const challengeTyping = gameState.mode === 'challenge';
+      const answerButtons = gameState.battle.currentChoices.map(choice => {
+        let cls = 'choice-btn';
+        if (gameState.battle.lastAnswerCorrect !== null) {
+          if (Number(choice) === Number(q.answer)) cls += ' correct';
+          else if (gameState.battle.lastAnswerCorrect === false) cls += ' wrong';
+        }
+        return `<button class="${cls}" onclick="checkAnswer(${choice})" ${gameState.battle.lockAnswers ? 'disabled' : ''}>${choice}</button>`;
+      }).join('');
+      return `
+        <div class="screen">
+          ${topbar()}
+          <div class="battle-wrap">
+            <div class="arena">
+              <div class="fighter sparkle-bg ${gameState.battle.lastAnswerCorrect ? 'flash' : ''}">
+                <div><strong>${escapeHtml(gameState.player.name || 'Player 1')}</strong></div>
+                <div class="big-emoji">🧙</div>
+                <div class="muted">Math Hero</div>
+                <div class="hpbar"><div class="hpfill" style="width:${Math.max(6, (gameState.player.hearts / gameState.player.maxHearts) * 100)}%"></div></div>
+              </div>
+              <div class="fighter enemy ${gameState.session.isBoss ? 'boss' : ''} ${gameState.battle.lastAnswerCorrect === false ? 'shake' : ''}">
+                <div><strong>${gameState.battle.enemyName}</strong></div>
+                <div class="big-emoji">${gameState.battle.enemyEmoji}</div>
+                <div class="muted">${gameState.session.isSuperBoss ? 'Super Boss' : gameState.session.isBoss ? 'Boss' : 'Wild Monster'}</div>
+                <div class="hpbar"><div class="hpfill" style="width:${Math.max(6, (gameState.battle.enemyHp / gameState.battle.enemyMaxHp) * 100)}%"></div></div>
+              </div>
+            </div>
+            <div class="light-card question-box">
+              <div class="tiny-text">Question ${gameState.session.questionsAnswered + 1} of ${gameState.session.questionsTotal}</div>
+              <div class="prompt">${escapeHtml(q.prompt)}</div>
+              <div class="subprompt">${escapeHtml(q.subprompt || '')}</div>
+            </div>
+            <div class="choice-grid">${answerButtons}</div>
+            ${challengeTyping ? `<div class="light-card"><div><strong>Or type your answer</strong></div><div class="typing-row"><input inputmode="numeric" value="${escapeHtml(gameState.battle.typedAnswer)}" oninput="gameState.battle.typedAnswer=this.value;" placeholder="Type answer" /><button class="btn secondary" onclick="submitTypedAnswer()">Submit</button></div></div>` : ''}
+            <div class="feedback">${gameState.battle.feedback}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderReward() {
+      const stage = gameState.session.stageNumber;
+      const newBadge = BADGES.find(b => b.stage === stage && gameState.player.badges.includes(b.id));
+      const newPet = isSuperBoss(stage) ? currentPetObjects().slice(-1)[0] : null;
+      return `
+        <div class="screen split">
+          <div class="card sparkle-bg center" style="flex-direction:column; text-align:center;">
+            <div class="reward-star">🎉</div>
+            <h2 class="title" style="font-size:44px;margin:10px 0;">Stage Cleared!</h2>
+            <p class="subtitle">You beat ${gameState.battle.enemyName} and won treasure rewards.</p>
+            <div class="reward-grid" style="width:100%;margin-top:12px;">
+              <div class="pet-card"><div style="font-size:34px;">⭐</div><strong>${gameState.session.stageStarAward} Star${gameState.session.stageStarAward !== 1 ? 's' : ''}</strong><div class="tiny-text">${gameState.session.wasFlawless ? '🎯 Perfect run bonus!' : 'No mistakes = 2 stars'}</div></div>
+              <div class="pet-card"><div style="font-size:34px;">❤️</div><strong>${gameState.player.hearts}/${gameState.player.maxHearts} Hearts</strong></div>
+              <div class="pet-card"><div style="font-size:34px;">🗺️</div><strong>Next stage unlocked</strong></div>
+            </div>
+            <div class="footer-actions" style="margin-top:12px;"><button class="btn" onclick="continueAfterReward()">Continue Map</button></div>
+          </div>
+          <div class="light-card">
+            <h3 class="panel-title">Big rewards</h3>
+            <div class="list">
+              ${newBadge ? `<div class="list-item">${newBadge.emoji} New badge: <strong>${newBadge.name}</strong></div>` : '<div class="list-item">Keep going to earn the next badge!</div>'}
+              ${newPet ? `<div class="list-item">${newPet.emoji} New pet unlocked: <strong>${newPet.name}</strong></div>` : '<div class="list-item">Super bosses can unlock new pets.</div>'}
+              <div class="list-item">Correct answers: <strong>${gameState.session.correctCount}</strong></div>
+              <div class="list-item">Wrong answers: <strong>${gameState.session.wrongCount}</strong></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderParentPanel() {
+      const skills = Object.keys(gameState.parentPanel.skillStats);
+      const missed = gameState.parentPanel.missedProblems;
+      return `
+        <div class="screen">
+          <div class="card"><h2 class="panel-title">Parent Panel</h2><p class="panel-sub">Review misses, track growth, and adjust settings.</p></div>
+          <div class="split">
+            <div class="light-card">
+              <h3 class="panel-title">Missed-problem review</h3>
+              <div class="list" style="max-height:54vh;overflow:auto;">
+                ${missed.length ? missed.map(item => `<div class="list-item"><div><strong>${item.skill}</strong> · stage ${item.stage} · ${item.mode}</div><div>${escapeHtml(item.prompt)}</div><div class="muted">Answer: ${item.answer} · hints used: ${item.hints}</div></div>`).join('') : '<div class="list-item">No missed problems yet. Nice start!</div>'}
+              </div>
+            </div>
+            <div class="light-card">
+              <h3 class="panel-title">Stats</h3>
+              <div class="stats-grid">
+                <div class="stat-box"><div class="tiny-text">Highest map unlocked</div><div style="font-size:34px;font-weight:900;">${Math.max(...gameState.player.unlockedStages)}</div></div>
+                <div class="stat-box"><div class="tiny-text">Play time</div><div style="font-size:34px;font-weight:900;">${elapsedMinutes(gameState.player.playTimeMs)}m</div></div>
+                <div class="stat-box"><div class="tiny-text">Stars</div><div style="font-size:34px;font-weight:900;">${gameState.player.stars}</div></div>
+                <div class="stat-box"><div class="tiny-text">Pets</div><div style="font-size:34px;font-weight:900;">${gameState.player.pets.length}</div></div>
+              </div>
+              <h3 class="panel-title" style="margin-top:14px;">Accuracy by skill</h3>
+              <div class="list">
+                ${skills.length ? skills.map(skill => `<div class="list-item">${skill}: <strong>${accuracyFor(skill)}%</strong></div>`).join('') : '<div class="list-item">No skill data yet.</div>'}
+              </div>
+              <h3 class="panel-title" style="margin-top:14px;">Settings</h3>
+              <div class="settings-row"><span>Sound</span><div class="toggle ${gameState.settings.soundOn ? 'on' : ''}" onclick="toggleSetting('soundOn')"></div></div>
+              <div class="settings-row"><span>Reduce motion</span><div class="toggle ${gameState.settings.reduceMotion ? 'on' : ''}" onclick="toggleSetting('reduceMotion')"></div></div>
+              <div class="footer-actions" style="margin-top:12px;">
+                <button class="btn secondary" onclick="setScreen('map')">⬅️ Back</button>
+                <button class="btn ghost" onclick="resetProgress()">🗑️ Reset Progress</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPause() {
+      return `
+        <div class="screen split">
+          <div class="card">
+            <h2 class="panel-title">Pause</h2>
+            <p class="panel-sub">Take a break or change settings.</p>
+            <div class="btn-grid">
+              <button class="btn" onclick="setScreen('map')">🗺️ Back to Map</button>
+              <button class="btn secondary" onclick="openParentPanel()">🧑 Parent Panel</button>
+              <button class="btn ghost" onclick="toggleSetting('soundOn')">${gameState.settings.soundOn ? '🔊 Sound On' : '🔈 Sound Off'}</button>
+              <button class="btn ghost" onclick="toggleSetting('reduceMotion')">${gameState.settings.reduceMotion ? '🌙 Reduce Motion' : '✨ Full Motion'}</button>
+            </div>
+          </div>
+          <div class="light-card center" style="flex-direction:column; gap:10px;">
+            <div class="monster-token"><div class="emoji">😴</div><div class="name">Rest Time</div></div>
+            <div class="muted">Your progress is saved in this browser.</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderGameOver() {
+      return `
+        <div class="screen split">
+          <div class="card center" style="flex-direction:column; text-align:center;">
+            <div style="font-size:58px;">💖</div>
+            <h2 class="panel-title">Out of hearts</h2>
+            <p class="panel-sub">That\'s okay. You still keep your stars, badges, pets, and unlocked map progress.</p>
+            <div class="footer-actions"><button class="btn" onclick="replayFromMap()">🔁 Refill Hearts</button><button class="btn secondary" onclick="openParentPanel()">🧑 Parent Panel</button></div>
+          </div>
+          <div class="light-card">
+            <h3 class="panel-title">Progress kept</h3>
+            <div class="list">
+              <div class="list-item">Stars: <strong>${gameState.player.stars}</strong></div>
+              <div class="list-item">Badges: <strong>${gameState.player.badges.length}</strong></div>
+              <div class="list-item">Pets: <strong>${gameState.player.pets.length}</strong></div>
+              <div class="list-item">Highest stage: <strong>${Math.max(...gameState.player.unlockedStages)}</strong></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function render() {
+      const app = document.getElementById('app');
+      let html = '';
+      switch (gameState.screen) {
+        case 'title': html = renderTitle(); break;
+        case 'modeSelect': html = renderModeSelect(); break;
+        case 'profile': html = renderProfile(); break;
+        case 'map': html = renderMap(); break;
+        case 'stageIntro': html = renderStageIntro(); break;
+        case 'battle': html = renderBattle(); break;
+        case 'reward': html = renderReward(); break;
+        case 'parentPanel': html = renderParentPanel(); break;
+        case 'pause': html = renderPause(); break;
+        case 'gameOver': html = renderGameOver(); break;
+        default: html = renderTitle();
+      }
+      app.innerHTML = html;
+      saveGame();
+    }
+
+    window.setScreen = setScreen;
+    window.startGame = startGame;
+    window.continueFromProfile = continueFromProfile;
+    window.startStage = startStage;
+    window.launchBattle = launchBattle;
+    window.checkAnswer = checkAnswer;
+    window.submitTypedAnswer = submitTypedAnswer;
+    window.openParentPanel = openParentPanel;
+    window.toggleSetting = toggleSetting;
+    window.resetProgress = resetProgress;
+    window.continueAfterReward = continueAfterReward;
+    window.replayFromMap = replayFromMap;
+    window.saveGame = saveGame;
+
+    render();
+  </script>
+</body>
+</html>
